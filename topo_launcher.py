@@ -8,7 +8,6 @@ from mininet.node import RemoteController, OVSSwitch, DefaultController
 from mininet.node import CPULimitedHost
 from mininet.link import TCLink
 from mininet.cli import CLI
-from mininet.log import setLogLevel, info
 
 from linear import LinearTopo
 from mesh import MeshTopo
@@ -40,7 +39,7 @@ import numpy as np
 mice_flow_min = 100  # KBytes = 100KB
 mice_flow_max = 10240  # KBytes = 10MB
 elephant_flow_min = 10240  # KBytes = 10MB
-elephant_flow_max = 1024*1024*10  # KBytes = 10 GB
+elephant_flow_max = 1024 * 1024 * 10  # KBytes = 10 GB
 
 # FLOWS
 # n_mice_flows = 45
@@ -48,21 +47,60 @@ elephant_flow_max = 1024*1024*10  # KBytes = 10 GB
 # n_iot_flows = 0
 
 # L4 PROTOCOLS
-protocol_list = ['--udp', '']  # udp / tcp
+protocol_list = ["--udp", ""]  # udp / tcp
 port_min = 1025
 port_max = 65536
 
 # IPERF SETTINGS
-sampling_interval = '1'  # seconds
+sampling_interval = "1"  # seconds
 
 
 # ELEPHANT FLOW PARAMS
-elephant_bandwidth_list = ['10M', '20M', '30M', '40M', '50M', '60M', '70M', '80M', '90M', '100M',
-                           '200M', '300M', '400M', '500M', '600M', '700M', '800M', '900M', '1000M']
+elephant_bandwidth_list = [
+    "10M",
+    "20M",
+    "30M",
+    "40M",
+    "50M",
+    "60M",
+    "70M",
+    "80M",
+    "90M",
+    "100M",
+    "200M",
+    "300M",
+    "400M",
+    "500M",
+    "600M",
+    "700M",
+    "800M",
+    "900M",
+    "1000M",
+]
 
 # MICE FLOW PARAMS
-mice_bandwidth_list = ['100K', '200K', '300K', '400K', '500K', '600K', '700K', '800K', '900K', '1000K',
-                       '2000K', '3000K', '4000K', '5000K', '6000K', '7000K', '8000K', '9000K', '10000K', '1000K']
+mice_bandwidth_list = [
+    "100K",
+    "200K",
+    "300K",
+    "400K",
+    "500K",
+    "600K",
+    "700K",
+    "800K",
+    "900K",
+    "1000K",
+    "2000K",
+    "3000K",
+    "4000K",
+    "5000K",
+    "6000K",
+    "7000K",
+    "8000K",
+    "9000K",
+    "10000K",
+    "1000K",
+]
 
 
 def random_normal_number(low, high):
@@ -73,7 +111,7 @@ def random_normal_number(low, high):
     return int(num)
 
 
-def generate_elephant_flows(id, duration, net, log_dir):
+def generate_elephant_flows(duration, net):
 
     """
     Generate Elephant flows
@@ -99,8 +137,6 @@ def generate_elephant_flows(id, duration, net, log_dir):
     server_cmd += port_argument
     server_cmd += " -i "
     server_cmd += sampling_interval
-    server_cmd += " > "
-    server_cmd += log_dir + "/elephant_flow_%003d" % id + ".txt 2>&1 "
     server_cmd += " & "
 
     client_cmd = "iperf -c "
@@ -120,7 +156,7 @@ def generate_elephant_flows(id, duration, net, log_dir):
     src.cmdPrint(client_cmd)
 
 
-def generate_mice_flows(id, duration, net, log_dir):
+def generate_mice_flows(duration, net):
 
     """
     Generate mice flows
@@ -146,8 +182,6 @@ def generate_mice_flows(id, duration, net, log_dir):
     server_cmd += port_argument
     server_cmd += " -i "
     server_cmd += sampling_interval
-    server_cmd += " > "
-    server_cmd += log_dir + "/mice_flow_%003d" % id + ".txt 2>&1 "
     server_cmd += " & "
 
     client_cmd = "iperf -c "
@@ -167,13 +201,10 @@ def generate_mice_flows(id, duration, net, log_dir):
     src.cmdPrint(client_cmd)
 
 
-def generate_flows(n_elephant_flows, n_mice_flows, duration, net, log_dir):
+def generate_flows(n_elephant_flows, n_mice_flows, duration, net):
     """
     Generate elephant and mice flows randomly for the given duration
     """
-
-    if not path.exists(log_dir):
-        mkdir(log_dir)
 
     n_total_flows = n_elephant_flows + n_mice_flows
     interval = duration / n_total_flows
@@ -181,9 +212,9 @@ def generate_flows(n_elephant_flows, n_mice_flows, duration, net, log_dir):
     # setting random mice flow or elephant flows
     flow_type = []
     for i in range(n_elephant_flows):
-        flow_type.append('E')
+        flow_type.append("E")
     for i in range(n_mice_flows):
-        flow_type.append('M')
+        flow_type.append("M")
     random.shuffle(flow_type)
 
     # setting random flow start times
@@ -224,33 +255,30 @@ def generate_flows(n_elephant_flows, n_mice_flows, duration, net, log_dir):
         if i == 0:
             time.sleep(flow_start_time[i])
         else:
-            time.sleep(flow_start_time[i] - flow_start_time[i-1])
-        if flow_type[i] == 'E':
-            generate_elephant_flows(i, flow_duration[i], net, log_dir)
-        elif flow_type[i] == 'M':
-            generate_mice_flows(i, flow_duration[i], net, log_dir)
+            time.sleep(flow_start_time[i] - flow_start_time[i - 1])
+        if flow_type[i] == "E":
+            generate_elephant_flows(i, flow_duration[i], net)
+        elif flow_type[i] == "M":
+            generate_mice_flows(i, flow_duration[i], net)
 
     # sleeping for the remaining duration of the experiment
     remaining_duration = duration - flow_start_time[-1]
-    info("Traffic started, going to sleep for %s seconds...\n " % remaining_duration)
     time.sleep(remaining_duration)
 
     # ending all the flows generated by
     # killing the iperf sessions
-    info("Stopping traffic...\n")
-    info("Killing active iperf sessions...\n")
 
     # killing iperf in all the hosts
     for host in net.hosts:
-        host.cmdPrint('killall -9 iperf')
+        host.cmdPrint("killall -9 iperf")
 
 
 # Main function
 if __name__ == "__main__":
     # Loading default parameter values
-    log_dir = "/Desktop/mininet-log/test-"
     topology = LinearTopo()
     default_controller = True
+    protocol = "tcp"
     controller_ip = "127.0.0.1"  # localhost
     controller_port = 6633
     debug_flag = False
@@ -294,66 +322,71 @@ if __name__ == "__main__":
                 debug_host = sub_arg[0]
                 debug_port = int(sub_arg[1])
 
-            sys.path.append("/home/stainlee/Programs/pycharm-2017.3.3/debug-eggs/pycharm-debug.egg")
+            sys.path.append(
+                "/home/stainlee/Programs/pycharm-2017.3.3/debug-eggs/pycharm-debug.egg"
+            )
             import pydevd
 
             # conecting to pycharm debugger
-            pydevd.settrace(debug_host, port=debug_port, stdoutToServer=True, stderrToServer=True)
-
-    # Starting program
-    setLogLevel('info')
-
-    # creating log directory
-    log_dir = path.expanduser('~') + log_dir
-    i = 1
-    while True:
-        if not path.exists(log_dir + str(i)):
-            # mkdir(log_dir + str(i))
-            log_dir = log_dir + str(i)
-            break
-        i = i+1
+            pydevd.settrace(
+                debug_host, port=debug_port, stdoutToServer=True, stderrToServer=True
+            )
 
     # starting mininet
     if default_controller:
-        net = Mininet(topo=topology, controller=DefaultController, host=CPULimitedHost, link=TCLink,
-                      switch=OVSSwitch, autoSetMacs=True)
+        net = Mininet(
+            topo=topology,
+            controller=DefaultController,
+            host=CPULimitedHost,
+            link=TCLink,
+            switch=OVSSwitch,
+            autoSetMacs=True,
+        )
     else:
-        net = Mininet(topo=topology, controller=None, host=CPULimitedHost, link=TCLink,
-                      switch=OVSSwitch, autoSetMacs=True)
-        net.addController('c1', controller=RemoteController, ip=controller_ip, port=controller_port)
+        net = Mininet(
+            topo=topology,
+            controller=None,
+            host=CPULimitedHost,
+            link=TCLink,
+            switch=OVSSwitch,
+            autoSetMacs=True,
+        )
+        net.addController(
+            "c1",
+            controller=RemoteController,
+            ip=controller_ip,
+            port=controller_port,
+            protocol=protocol,
+        )
 
     net.start()
 
     user_input = "QUIT"
 
     # run till user quits
-    while True:
-        # if user enters CTRL + D then treat it as quit
-        try:
-            user_input = raw_input("GEN/CLI/QUIT: ")
-        except EOFError as error:
-            user_input = "QUIT"
+    # if user enters CTRL + D then treat it as quit
+    try:
+        user_input = raw_input("GEN/CLI/QUIT: ")
+    except EOFError as error:
+        user_input = "QUIT"
 
-        if user_input.upper() == "GEN":
-            experiment_duration = int(raw_input("Experiment duration: "))
-            n_elephant_flows = int(raw_input("No of elephant flows: "))
-            n_mice_flows = int(raw_input("No of mice flows: "))
+    if user_input.upper() == "GEN":
+        experiment_duration = int(raw_input("Experiment duration: "))
+        n_elephant_flows = int(raw_input("No of elephant flows: "))
+        n_mice_flows = int(raw_input("No of mice flows: "))
 
-            generate_flows(n_elephant_flows, n_mice_flows, experiment_duration, net, log_dir)
+        generate_flows(n_elephant_flows, n_mice_flows, experiment_duration, net)
 
-        elif user_input.upper() == "CLI":
-            info("Running CLI...\n")
-            CLI(net)
+    elif user_input.upper() == "CLI":
+        CLI(net)
 
-        elif user_input.upper() == "QUIT":
-            info("Terminating...\n")
-            net.stop()
-            break
+    elif user_input.upper() == "QUIT":
+        net.stop()
 
-        else:
-            print("Command not found")
+    else:
+        print("Command not found")
 
-'''
+"""
 Area for scratch pad
 
-'''
+"""
