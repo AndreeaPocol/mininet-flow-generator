@@ -257,9 +257,9 @@ def generate_flows(n_elephant_flows, n_mice_flows, duration, net):
         else:
             time.sleep(flow_start_time[i] - flow_start_time[i - 1])
         if flow_type[i] == "E":
-            generate_elephant_flows(i, flow_duration[i], net)
+            generate_elephant_flows(flow_duration[i], net)
         elif flow_type[i] == "M":
-            generate_mice_flows(i, flow_duration[i], net)
+            generate_mice_flows(flow_duration[i], net)
 
     # sleeping for the remaining duration of the experiment
     remaining_duration = duration - flow_start_time[-1]
